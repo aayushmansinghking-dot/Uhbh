@@ -2,76 +2,83 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Raja Mantri Chor Sipahi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
     margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: radial-gradient(circle at top, #111, #000);
+    font-family: Arial, sans-serif;
+    background: linear-gradient(120deg, #000, #111, #000);
     color: #fff;
     text-align: center;
 }
 
 h1 {
-    margin-top: 20px;
     color: gold;
-    letter-spacing: 2px;
+    text-shadow: 0 0 10px gold;
 }
 
-.game-box {
-    max-width: 420px;
-    margin: 20px auto;
-    background: rgba(0,0,0,0.8);
-    border: 2px solid gold;
-    border-radius: 15px;
+.container {
+    max-width: 500px;
+    margin: auto;
     padding: 20px;
-    box-shadow: 0 0 25px rgba(255,215,0,0.4);
 }
 
 button {
     padding: 12px 20px;
     margin: 10px;
-    border-radius: 30px;
     border: none;
-    font-size: 16px;
+    border-radius: 25px;
+    font-weight: bold;
     cursor: pointer;
     background: gold;
-    color: black;
-    font-weight: bold;
+    color: #000;
 }
 
 button:hover {
     background: orange;
 }
 
-.role-card {
-    margin-top: 20px;
-    font-size: 22px;
-    padding: 20px;
-    border-radius: 12px;
+input {
+    padding: 10px;
+    width: 90%;
+    margin: 5px;
+    border-radius: 10px;
+    border: none;
+}
+
+.card {
     border: 2px dashed gold;
+    padding: 20px;
+    margin: 15px 0;
+    font-size: 22px;
     display: none;
 }
 
-.score {
-    margin-top: 15px;
-    font-size: 16px;
-    color: #ccc;
-}
+.hidden { display: none; }
 
-.hidden {
-    display: none;
-}
-
-.guess-btn {
+table {
     width: 100%;
-    margin-top: 10px;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+table, th, td {
+    border: 1px solid gold;
+}
+
+th, td {
+    padding: 8px;
+}
+
+th {
+    background: gold;
+    color: #000;
 }
 
 footer {
-    margin-top: 30px;
+    margin-top: 20px;
     font-size: 12px;
     color: #aaa;
 }
@@ -82,105 +89,160 @@ footer {
 
 <h1>👑 Raja Mantri Chor Sipahi 👑</h1>
 
-<div class="game-box">
+<audio id="bgm" loop>
+    <source src="music.mp3" type="audio/mpeg">
+</audio>
 
-    <div id="startScreen">
-        <p>Tap below to start the game</p>
-        <button onclick="startGame()">Start Game</button>
-    </div>
+<div class="container">
 
-    <div id="roleScreen" class="hidden">
-        <p><b>Your Role:</b></p>
-        <div id="roleCard" class="role-card"></div>
-        <button onclick="nextPlayer()">Next Player</button>
-    </div>
+<!-- PLAYER SETUP -->
+<div id="setup">
+    <p>Enter Player Names</p>
+    <input id="p0" placeholder="Player 1 Name">
+    <input id="p1" placeholder="Player 2 Name">
+    <input id="p2" placeholder="Player 3 Name">
+    <input id="p3" placeholder="Player 4 Name">
+    <button onclick="startGame()">Start Game</button>
+</div>
 
-    <div id="guessScreen" class="hidden">
-        <p><b>Mantri, guess who is the Chor</b></p>
-        <button class="guess-btn" onclick="makeGuess(2)">Player 3</button>
-        <button class="guess-btn" onclick="makeGuess(3)">Player 4</button>
-    </div>
+<!-- ROLE SCREEN -->
+<div id="roleScreen" class="hidden">
+    <p id="playerTurn"></p>
+    <div id="roleCard" class="card"></div>
+    <button onclick="nextPlayer()">Next</button>
+</div>
 
-    <div id="resultScreen" class="hidden">
-        <h2 id="resultText"></h2>
-        <div class="score" id="scoreBoard"></div>
-        <button onclick="resetGame()">Play Again</button>
-    </div>
+<!-- GUESS SCREEN -->
+<div id="guessScreen" class="hidden">
+    <p><b>Mantri, guess the Chor</b></p>
+    <div id="guessButtons"></div>
+</div>
+
+<!-- RESULT -->
+<div id="resultScreen" class="hidden">
+    <h2 id="resultText"></h2>
+    <button onclick="nextRound()">Next Round</button>
+</div>
+
+<!-- POINTS TABLE -->
+<div id="scoreBoard" class="hidden">
+    <h3>🏆 Points Table</h3>
+    <table>
+        <tr>
+            <th>Player</th>
+            <th>Role</th>
+            <th>Points</th>
+        </tr>
+        <tbody id="scoreTable"></tbody>
+    </table>
+</div>
 
 </div>
 
 <footer>
-    Classic Indian Game • Made with ❤️
+Classic Indian Game • Single-File Web Project
 </footer>
 
 <script>
+let players = [];
 let roles = [];
-let players = ["Player 1", "Player 2", "Player 3", "Player 4"];
-let currentPlayer = 0;
+let points = [0,0,0,0];
+let current = 0;
 let chorIndex = -1;
-
-let scores = {
-    Raja: 0,
-    Mantri: 0,
-    Chor: 0,
-    Sipahi: 0
-};
+let mantriIndex = -1;
 
 function startGame() {
-    roles = ["Raja", "Mantri", "Chor", "Sipahi"];
-    roles.sort(() => Math.random() - 0.5);
-    chorIndex = roles.indexOf("Chor");
-    currentPlayer = 0;
+    for (let i=0;i<4;i++) {
+        let name = document.getElementById("p"+i).value;
+        players[i] = name || "Player "+(i+1);
+    }
 
-    document.getElementById("startScreen").classList.add("hidden");
+    document.getElementById("bgm").play();
+    document.getElementById("setup").classList.add("hidden");
+    newRound();
+}
+
+function newRound() {
+    roles = ["Raja","Mantri","Chor","Sipahi"];
+    roles.sort(()=>Math.random()-0.5);
+
+    chorIndex = roles.indexOf("Chor");
+    mantriIndex = roles.indexOf("Mantri");
+
+    current = 0;
     document.getElementById("roleScreen").classList.remove("hidden");
     showRole();
 }
 
 function showRole() {
+    document.getElementById("playerTurn").innerText =
+        players[current] + ", tap to see your role";
     let card = document.getElementById("roleCard");
     card.style.display = "block";
-    card.innerHTML = roles[currentPlayer];
+    card.innerText = roles[current];
 }
 
 function nextPlayer() {
-    currentPlayer++;
-    if (currentPlayer < 4) {
+    current++;
+    if (current < 4) {
         showRole();
     } else {
         document.getElementById("roleScreen").classList.add("hidden");
-        document.getElementById("guessScreen").classList.remove("hidden");
+        showGuess();
     }
 }
 
-function makeGuess(playerIndex) {
+function showGuess() {
+    document.getElementById("guessScreen").classList.remove("hidden");
+    let box = document.getElementById("guessButtons");
+    box.innerHTML = "";
+
+    for (let i=0;i<4;i++) {
+        if (i !== mantriIndex) {
+            let btn = document.createElement("button");
+            btn.innerText = players[i];
+            btn.onclick = ()=>makeGuess(i);
+            box.appendChild(btn);
+        }
+    }
+}
+
+function makeGuess(i) {
     document.getElementById("guessScreen").classList.add("hidden");
     document.getElementById("resultScreen").classList.remove("hidden");
 
-    if (playerIndex === chorIndex) {
-        scores.Raja += 100;
-        scores.Mantri += 50;
-        document.getElementById("resultText").innerText = "🎉 Mantri caught the Chor!";
+    if (i === chorIndex) {
+        points[mantriIndex] += 50;
+        points[roles.indexOf("Raja")] += 100;
+        document.getElementById("resultText").innerText =
+            "🎉 Chor Caught!";
     } else {
-        scores.Chor += 150;
-        document.getElementById("resultText").innerText = "😈 Chor escaped!";
+        points[chorIndex] += 150;
+        document.getElementById("resultText").innerText =
+            "😈 Chor Escaped!";
     }
 
-    updateScore();
+    updateTable();
 }
 
-function updateScore() {
-    document.getElementById("scoreBoard").innerHTML = `
-        Raja: ${scores.Raja}<br>
-        Mantri: ${scores.Mantri}<br>
-        Chor: ${scores.Chor}<br>
-        Sipahi: ${scores.Sipahi}
-    `;
+function updateTable() {
+    document.getElementById("scoreBoard").classList.remove("hidden");
+    let table = document.getElementById("scoreTable");
+    table.innerHTML = "";
+
+    for (let i=0;i<4;i++) {
+        table.innerHTML += `
+        <tr>
+            <td>${players[i]}</td>
+            <td>${roles[i]}</td>
+            <td>${points[i]}</td>
+        </tr>`;
+    }
 }
 
-function resetGame() {
+function nextRound() {
     document.getElementById("resultScreen").classList.add("hidden");
-    document.getElementById("startScreen").classList.remove("hidden");
+    newRound();
 }
 </script>
 

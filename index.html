@@ -9,14 +9,14 @@
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: linear-gradient(120deg, #000, #111, #000);
+    background: radial-gradient(circle, #000, #111);
     color: #fff;
     text-align: center;
 }
 
 h1 {
     color: gold;
-    text-shadow: 0 0 10px gold;
+    text-shadow: 0 0 15px gold;
 }
 
 .container {
@@ -41,8 +41,8 @@ button:hover {
 }
 
 input {
-    padding: 10px;
     width: 90%;
+    padding: 10px;
     margin: 5px;
     border-radius: 10px;
     border: none;
@@ -52,7 +52,7 @@ input {
     border: 2px dashed gold;
     padding: 20px;
     margin: 15px 0;
-    font-size: 22px;
+    font-size: 24px;
     display: none;
 }
 
@@ -68,19 +68,13 @@ table, th, td {
     border: 1px solid gold;
 }
 
-th, td {
-    padding: 8px;
-}
-
 th {
     background: gold;
-    color: #000;
+    color: black;
 }
 
-footer {
-    margin-top: 20px;
-    font-size: 12px;
-    color: #aaa;
+th, td {
+    padding: 8px;
 }
 </style>
 </head>
@@ -89,33 +83,35 @@ footer {
 
 <h1>👑 Raja Mantri Chor Sipahi 👑</h1>
 
-<audio id="bgm" loop>
-    <source src="music.mp3" type="audio/mpeg">
+<audio id="suspense" loop>
+    <source src="suspense.mp3" type="audio/mpeg">
 </audio>
 
 <div class="container">
 
-<!-- PLAYER SETUP -->
+<!-- SETUP -->
 <div id="setup">
     <p>Enter Player Names</p>
-    <input id="p0" placeholder="Player 1 Name">
-    <input id="p1" placeholder="Player 2 Name">
-    <input id="p2" placeholder="Player 3 Name">
-    <input id="p3" placeholder="Player 4 Name">
+    <input id="p0" placeholder="Player 1">
+    <input id="p1" placeholder="Player 2">
+    <input id="p2" placeholder="Player 3">
+    <input id="p3" placeholder="Player 4">
     <button onclick="startGame()">Start Game</button>
 </div>
 
 <!-- ROLE SCREEN -->
 <div id="roleScreen" class="hidden">
-    <p id="playerTurn"></p>
+    <p id="turnText"></p>
+    <button onclick="getRole()">Get Role</button>
     <div id="roleCard" class="card"></div>
-    <button onclick="nextPlayer()">Next</button>
+    <button onclick="nextPlayer()">Next Player</button>
 </div>
 
-<!-- GUESS SCREEN -->
+<!-- SIPAHI GUESS -->
 <div id="guessScreen" class="hidden">
-    <p><b>Mantri, guess the Chor</b></p>
-    <div id="guessButtons"></div>
+    <h3>🪖 Sipahi, catch the Chor</h3>
+    <p>Choose between Mantri and Chor</p>
+    <div id="guessBtns"></div>
 </div>
 
 <!-- RESULT -->
@@ -124,7 +120,7 @@ footer {
     <button onclick="nextRound()">Next Round</button>
 </div>
 
-<!-- POINTS TABLE -->
+<!-- SCORE TABLE -->
 <div id="scoreBoard" class="hidden">
     <h3>🏆 Points Table</h3>
     <table>
@@ -139,87 +135,96 @@ footer {
 
 </div>
 
-<footer>
-Classic Indian Game • Single-File Web Project
-</footer>
-
 <script>
 let players = [];
 let roles = [];
 let points = [0,0,0,0];
 let current = 0;
-let chorIndex = -1;
-let mantriIndex = -1;
+
+let raja, sipahi, mantri, chor;
 
 function startGame() {
     for (let i=0;i<4;i++) {
-        let name = document.getElementById("p"+i).value;
-        players[i] = name || "Player "+(i+1);
+        players[i] = document.getElementById("p"+i).value || "Player "+(i+1);
     }
-
-    document.getElementById("bgm").play();
     document.getElementById("setup").classList.add("hidden");
     newRound();
 }
 
 function newRound() {
-    roles = ["Raja","Mantri","Chor","Sipahi"];
+    roles = ["Raja","Sipahi","Mantri","Chor"];
     roles.sort(()=>Math.random()-0.5);
 
-    chorIndex = roles.indexOf("Chor");
-    mantriIndex = roles.indexOf("Mantri");
+    raja = roles.indexOf("Raja");
+    sipahi = roles.indexOf("Sipahi");
+    mantri = roles.indexOf("Mantri");
+    chor = roles.indexOf("Chor");
 
     current = 0;
     document.getElementById("roleScreen").classList.remove("hidden");
-    showRole();
+    updateTurn();
 }
 
-function showRole() {
-    document.getElementById("playerTurn").innerText =
-        players[current] + ", tap to see your role";
+function updateTurn() {
+    document.getElementById("roleCard").style.display = "none";
+    document.getElementById("turnText").innerText =
+        players[current] + ", click Get Role";
+}
+
+function getRole() {
     let card = document.getElementById("roleCard");
     card.style.display = "block";
-    card.innerText = roles[current];
+
+    if (current === raja) {
+        card.innerText = "👑 Raja (Visible)";
+    } else if (current === sipahi) {
+        card.innerText = "🪖 Sipahi";
+    } else if (current === mantri) {
+        card.innerText = "🧠 Mantri (Hidden)";
+    } else {
+        card.innerText = "🕵️ Chor (Hidden)";
+    }
 }
 
 function nextPlayer() {
     current++;
     if (current < 4) {
-        showRole();
+        updateTurn();
     } else {
         document.getElementById("roleScreen").classList.add("hidden");
-        showGuess();
+        startGuess();
     }
 }
 
-function showGuess() {
+function startGuess() {
     document.getElementById("guessScreen").classList.remove("hidden");
-    let box = document.getElementById("guessButtons");
+    document.getElementById("suspense").play();
+
+    let box = document.getElementById("guessBtns");
     box.innerHTML = "";
 
-    for (let i=0;i<4;i++) {
-        if (i !== mantriIndex) {
-            let btn = document.createElement("button");
-            btn.innerText = players[i];
-            btn.onclick = ()=>makeGuess(i);
-            box.appendChild(btn);
-        }
-    }
+    [mantri, chor].forEach(i=>{
+        let btn = document.createElement("button");
+        btn.innerText = players[i];
+        btn.onclick = ()=>checkGuess(i);
+        box.appendChild(btn);
+    });
 }
 
-function makeGuess(i) {
+function checkGuess(i) {
+    document.getElementById("suspense").pause();
     document.getElementById("guessScreen").classList.add("hidden");
     document.getElementById("resultScreen").classList.remove("hidden");
 
-    if (i === chorIndex) {
-        points[mantriIndex] += 50;
-        points[roles.indexOf("Raja")] += 100;
+    if (i === chor) {
+        points[raja] += 100;
+        points[sipahi] += 50;
         document.getElementById("resultText").innerText =
-            "🎉 Chor Caught!";
+            "🎉 Sipahi caught the Chor!";
     } else {
-        points[chorIndex] += 150;
+        points[chor] += 150;
         document.getElementById("resultText").innerText =
-            "😈 Chor Escaped!";
+            "😈 Chor escaped!";
     }
 
     updateTable();
@@ -227,11 +232,11 @@ function makeGuess(i) {
 
 function updateTable() {
     document.getElementById("scoreBoard").classList.remove("hidden");
-    let table = document.getElementById("scoreTable");
-    table.innerHTML = "";
+    let t = document.getElementById("scoreTable");
+    t.innerHTML = "";
 
     for (let i=0;i<4;i++) {
-        table.innerHTML += `
+        t.innerHTML += `
         <tr>
             <td>${players[i]}</td>
             <td>${roles[i]}</td>
